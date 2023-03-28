@@ -1,23 +1,14 @@
 #ifndef CAMERA_H
 #define CAMERA_H
 
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
+extern "C" {
 
-class Camera {
-    public:
-        Camera();
-        glm::mat4 getViewMatrix();
-        glm::mat4 getProjectionMatrix(float width, float height);
-        glm::mat4 getViewPortMatrix(float width, float height);
+    #include <glm/glm.hpp>
+    #include <glm/gtc/matrix_transform.hpp>
 
-    private:
-        glm::vec3 position;
-        glm::vec3 front;
-        glm::vec3 up;
-        float movementSpeed;
-        float mouseSensitivity;
-        float fov;
-};
+    glm::mat4 getViewMatrix(glm::vec3 position, glm::vec3 target, glm::vec3 up);
+    glm::mat4 getProjectionMatrix(float width, float height);
+    glm::mat4 getViewPortMatrix(float width, float height, glm::vec3 position, glm::vec3 target, glm::vec3 up);
+ }
 
 #endif /* CAMERA_H */
