@@ -1,18 +1,16 @@
-CC = gcc
-CFLAGS = -Wall -Wextra -std=c17 `pkg-config --cflags sdl2 SDL2_ttf`
-LIBS = `pkg-config --libs sdl2 SDL2_ttf`
+CXX = g++
+CFLAGS = -Wall -Wextra -std=c17 `pkg-config --cflags sdl2 SDL2_ttf glew` -I./include
+CPPFLAGS = -Wall -Wextra -std=c++17 `pkg-config --cflags sdl2 SDL2_ttf glew glm`
+LIBS = `pkg-config --libs sdl2 SDL2_ttf glew` -framework OpenGL
 
-SRC = *.c
-OBJ = $(SRC:.c=.o)
-EXEC = main
+CSOURCES = main.c voxelRenderer.c
+CPPSOURCES = Camera.cpp
 
-all: $(EXEC)
+all: build
 
-$(EXEC): $(OBJ)
-	$(CC) -o $@ $^ $(LIBS)
+build:
+	$(CXX) -v  $(CSOURCES) $(CPPSOURCES) -o main $(CFLAGS) $(CPPFLAGS) $(LIBS)
 
-%.o: %.c
-	$(CC) -o $@ -c $< $(CFLAGS)
 
 clean:
-	rm -rf $(OBJ) $(EXEC)
+	rm -f main *.o

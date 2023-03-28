@@ -1,0 +1,54 @@
+#include <stdio.h>
+#include <SDL2/SDL.h>
+#include <SDL2/SDL_ttf.h>
+#include <stdbool.h>
+#include <math.h>
+
+#include <GL/glew.h>
+#include <GL/gl.h>
+#include <SDL2/SDL_opengl.h>
+
+#include "voxelRenderer.h"
+
+#define false 0
+#define true 1
+
+#define WINDOW_WIDTH 1920
+#define WINDOW_HEIGHT 1080
+
+
+
+int main(int argc, char* argv[]){
+    SDL_Window* window = NULL;
+    SDL_GLContext glContext = NULL;
+
+    if(SDL_Init(SDL_INIT_VIDEO) < 0){
+        printf("SDL could not initialize! SDL_Error: %s", SDL_GetError());
+    }
+
+    window = SDL_CreateWindow("Voxel Renderer", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, WINDOW_WIDTH, WINDOW_HEIGHT, SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE);
+    glContext = SDL_GL_CreateContext(window);
+
+    GLenum glewError = glewInit();
+
+    if(glewError != GLEW_OK){
+        printf("Error initializing GLEW! %s", glewGetErrorString(glewError));
+    }
+
+    SDL_Event event;
+    bool quit = false;
+
+    while(!quit){
+        while(SDL_PollEvent(&event)){
+            if(event.type == SDL_QUIT){
+                quit = true;
+            }
+        }
+
+        glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+        SDL_GL_SwapWindow(window);
+    }
+}
+

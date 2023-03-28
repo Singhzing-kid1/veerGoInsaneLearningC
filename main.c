@@ -2,64 +2,103 @@
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_ttf.h>
 #include <stdbool.h>
+#include <math.h>
 
-int main(int argc, char *argv[]){
-    SDL_Window* window = NULL;// pointer to the window
-    SDL_Renderer* renderer = NULL;
+#include <GL/glew.h>
+#include <GL/gl.h>
+#include <SDL2/SDL_opengl.h>
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
+#include <glm/gtx/string_cast.hpp>
+
+#include "voxelRenderer.h"
+#include "Camera.h"
+
+#define false 0
+#define true 1
+
+#define WINDOW_WIDTH 1920
+#define WINDOW_HEIGHT 1080
 
 
-    // Initialize SDL
-    if(SDL_Init(SDL_INIT_VIDEO)<0){
-        printf("HAHA LOSER SDL INIT: Error %s", SDL_GetError());
-        return 1;
+
+int main(int argc, char* argv[]){
+    SDL_Window* window = NULL;
+    SDL_GLContext glContext = NULL;
+
+    if(SDL_Init(SDL_INIT_VIDEO) < 0){
+        printf("SDL could not initialize! SDL_Error: %s", SDL_GetError());
     }
 
-    if(TTF_Init() < 0){
-        printf("HAHA LOSER TTF INIT: Error %s", SDL_GetError());
-        return 1;
+    window = SDL_CreateWindow("Voxel Renderer", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, WINDOW_WIDTH, WINDOW_HEIGHT, SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE);
+    glContext = SDL_GL_CreateContext(window);
+
+    GLenum glewError = glewInit();
+
+    if(glewError != GLEW_OK){
+        printf("Error initializing GLEW! %s", glewGetErrorString(glewError));
     }
 
-    window = SDL_CreateWindow("Hello World", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, 800, 600, SDL_WINDOW_SHOWN);
-    renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
-    TTF_Font *font = TTF_OpenFont("Roboto-Regular.ttf", 24);
-    SDL_Color color = {255, 255, 255};
-    SDL_Surface *surface = TTF_RenderText_Solid(font, "Hello World", color);
-
-    if(!surface){
-        printf("HAHA LOSER CREATE SURFACE: Error %s", SDL_GetError());
-        return 1;
-    }
-    SDL_Texture *texture = SDL_CreateTextureFromSurface(renderer, surface);
-    SDL_Rect dstrect = {0, 0, surface->w, surface->h};
-
-
-
-    if(!window){
-        printf("HAHA LOSE CREATE WINDOW: Error %s", SDL_GetError());
-        return 1;
-    }
-
-    bool quit = 0;
     SDL_Event event;
+    bool quit = false;
+
+    glm::vec3 position = glm::vec3(0.0f, 0.0f, 3.0f);
+    glm::vec3 target = glm::vec3(0.0f, 0.0f, 0.0f);
+    glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f);
+    float movementSpeed = 2.5f;
+
+
+    voxFile testVoxModel = openVoxFile("test.vv");
+    Voxel* voxels = makeVoxels(testVoxModel);
+
+    glEnable(GL_DEPTH_TEST);
+    glDepthFunc(GL_LESS);
 
     while(!quit){
         while(SDL_PollEvent(&event)){
-            if(event.type == SDL_QUIT){
-                quit = 1;
+            switch (event.type){
+                case SDL_QUIT:
+                    quit = true;
+                    break;
+
+                case SDL_KEYDOWN:
+                    switch (event.key.keysym.sym){
+                        case SDLK_w:
+                            position += movementSpeed * glm::normalize(target - position);
+                            break;
+
+                        case SDLK_s:
+                            position -= movementSpeed * glm::normalize(target - position);
+                            break;
+
+                        case SDLK_a:
+                            position -= glm::normalize(glm::cross(target - position, up)) * movementSpeed;
+                            break;
+
+                        case SDLK_d:
+                            position += glm::normalize(glm::cross(target - position, up)) * movementSpeed;
+                            break;
+                    }
             }
         }
-        SDL_RenderClear(renderer);
-        SDL_RenderCopy(renderer, texture, NULL, &dstrect);
-        SDL_RenderPresent(renderer);
+
+        glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+        glMatrixMode(GL_PROJECTION);
+        glLoadIdentity();
+        glm::mat4 viewport = getViewPortMatrix((float)WINDOW_WIDTH, (float)WINDOW_HEIGHT, position, target, up);
+        glViewport(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT);
+        glMultMatrixf(glm::value_ptr(viewport));
+
+        printf("%s\n", glm::to_string(viewport).c_str());
+
+        renderVoxels(voxels, testVoxModel);
+
+        SDL_GL_SwapWindow(window);
     }
 
-    SDL_DestroyTexture(texture);
-    SDL_FreeSurface(surface);
-    TTF_CloseFont(font);
-    SDL_DestroyRenderer(renderer);
-    SDL_DestroyWindow(window);
-    TTF_Quit();
-    SDL_Quit();
-
-    return 0;
+    glDisable(GL_DEPTH_TEST);
 }
+
