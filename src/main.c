@@ -49,7 +49,7 @@ int main(int argc, char* argv[]){
     float movementSpeed = 2.5f;
 
 
-    voxFile testVoxModel = openVoxFile("test.vv");
+    voxFile testVoxModel = openVoxFile("debugFile.vv");
     Voxel* voxels = makeVoxels(testVoxModel);
 
     glEnable(GL_DEPTH_TEST);
