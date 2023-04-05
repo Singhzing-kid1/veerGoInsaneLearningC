@@ -13,7 +13,7 @@ VOXFILE = debugFile.vv
 all: build
 
 build:
-	$(CXX) -v  $(CSOURCES) $(CPPSOURCES) -o build/main $(CFLAGS) $(CPPFLAGS) $(LIBS)
+	$(CXX) $(CSOURCES) $(CPPSOURCES) -o build/main $(CFLAGS) $(CPPFLAGS) $(LIBS)
 	
 	cp -p $(VOXFILE) build/
 

@@ -112,8 +112,6 @@ Voxel* makeVoxels(voxFile file){
 }
 
 void renderVoxels(Voxel* voxels, voxFile file){
-   // glEnable(GL_DEPTH_TEST);
-
     for(int i = 0; i < file.voxelCount; i++){
        // printf("Voxel %d: (%d, %d, %d) (%d, %d, %d)\n", i, voxels[i].x, voxels[i].y, voxels[i].z, voxels[i].r, voxels[i].g, voxels[i].b);
         glPushMatrix();
@@ -156,6 +154,4 @@ void renderVoxels(Voxel* voxels, voxFile file){
 
         glPopMatrix();
     }
-
-    //glDisable(GL_DEPTH_TEST);
 }
