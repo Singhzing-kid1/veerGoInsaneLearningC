@@ -18,11 +18,11 @@ build:
 	mkdir -p build/voxelFiles
 	mkdir -p build/shaders
 	
-	cp -p $(VOXFILE) build/voxelFilest/
+	cp -p $(VOXFILE) build/voxelFiles/
 
 
 
 	
 clean:
-	rm -rf build/main build/*.o build/*
+	rm -f build/main build/*.o build/*
 

@@ -63,7 +63,7 @@ int main(int argc, char* argv[]){
 
     bool mouseGrabbed = true;
 
-    voxFile testVoxModel = openVoxFile("debugFile.vv");
+    voxFile testVoxModel = openVoxFile("./voxelFiles/debugFile.vv");
     Voxel* voxels = makeVoxels(testVoxModel);
 
     glEnable(GL_DEPTH_TEST);
