@@ -5,6 +5,9 @@
 #include <GL/glew.h>
 #include <SDL2/SDL_opengl.h>
 
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
 #include "voxelRenderer.h"
 
 #define false 0
@@ -111,47 +114,31 @@ Voxel* makeVoxels(voxFile file){
     return out;
 }
 
-void renderVoxels(Voxel* voxels, voxFile file){
+void renderVoxels(Voxel* voxels, voxFile file, unsigned int shaderProgram, GLuint VBO){
+
+    int vertexPosLoc = glGetAttribLocation(shaderProgram, "aPos");
+
     for(int i = 0; i < file.voxelCount; i++){
-       // printf("Voxel %d: (%d, %d, %d) (%d, %d, %d)\n", i, voxels[i].x, voxels[i].y, voxels[i].z, voxels[i].r, voxels[i].g, voxels[i].b);
-        glPushMatrix();
-        glTranslatef(voxels[i].x, voxels[i].y, voxels[i].z);
+        glm::mat4 modelMatrix = glm::mat4(1.0f);
+        modelMatrix = glm::translate(modelMatrix, glm::vec3(voxels[i].x, voxels[i].y, voxels[i].z));
 
-        glColor3f(voxels[i].r, voxels[i].g, voxels[i].b);
-        glBegin(GL_QUADS);
+        int modelMatrixLoc = glGetUniformLocation(shaderProgram, "modelMatrix");
+        glUniformMatrix4fv(modelMatrixLoc, 1, GL_FALSE, glm::value_ptr(modelMatrix));
 
-        // Front face
-        glVertex3f(-0.5f, -0.5f, 0.5f);
-        glVertex3f(0.5f, -0.5f, 0.5f);
-        glVertex3f(0.5f, 0.5f, 0.5f);
-        glVertex3f(-0.5f, 0.5f, 0.5f);
-        // Back face
-        glVertex3f(0.5f, -0.5f, -0.5f);
-        glVertex3f(-0.5f, -0.5f, -0.5f);
-        glVertex3f(-0.5f, 0.5f, -0.5f);
-        glVertex3f(0.5f, 0.5f, -0.5f);
-        // Top face
-        glVertex3f(-0.5f, 0.5f, 0.5f);
-        glVertex3f(0.5f, 0.5f, 0.5f);
-        glVertex3f(0.5f, 0.5f, -0.5f);
-        glVertex3f(-0.5f, 0.5f, -0.5f);
-        // Bottom face
-        glVertex3f(-0.5f, -0.5f, -0.5f);
-        glVertex3f(0.5f, -0.5f, -0.5f);
-        glVertex3f(0.5f, -0.5f, 0.5f);
-        glVertex3f(-0.5f, -0.5f, 0.5f);
-        // Right face
-        glVertex3f(0.5f, -0.5f, 0.5f);
-        glVertex3f(0.5f, -0.5f, -0.5f);
-        glVertex3f(0.5f, 0.5f, -0.5f);
-        glVertex3f(0.5f, 0.5f, 0.5f);
-        // Left face
-        glVertex3f(-0.5f, -0.5f, -0.5f);
-        glVertex3f(-0.5f, -0.5f, 0.5f);
-        glVertex3f(-0.5f, 0.5f, 0.5f);
-        glVertex3f(-0.5f, 0.5f, -0.5f);
-        glEnd();
+        int colorLoc = glGetUniformLocation(shaderProgram, "color");
+        glUniform3f(colorLoc, voxels[i].r, voxels[i].g, voxels[i].b);
 
-        glPopMatrix();
+        glBindBuffer(GL_ARRAY_BUFFER, VBO);
+
+        glVertexAttribPointer(vertexPosLoc, 3, GL_FLOAT, GL_FALSE, 0, (void*)0);
+        glEnableVertexAttribArray(vertexPosLoc);
+
+        glDrawArrays(GL_TRIANGLES, 0, 36);
+
+        glDisableVertexAttribArray(vertexPosLoc);
+
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+
     }
 }

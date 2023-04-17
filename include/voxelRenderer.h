@@ -15,5 +15,7 @@ typedef struct{
 
 voxFile openVoxFile(const char* filename);
 Voxel* makeVoxels(voxFile file);
-void renderVoxels(Voxel* voxels, voxFile file);
+void renderVoxels(Voxel* voxels, voxFile file, unsigned int shaderProgram, GLuint VBO);
+
+
 #endif
