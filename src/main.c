@@ -54,137 +54,172 @@ char* loadShader(const char* filename){
     return buffer;
 }
 
-int main(int argc, char* argv[]){
-    // SDL and openGL context initialization
-    SDL_Window* window = NULL;
-    SDL_GLContext glContext = NULL;
-
-    if(SDL_Init(SDL_INIT_VIDEO) < 0){
-        printf("SDL could not initialize! SDL_Error: %s", SDL_GetError());
-    }
-
-    window = SDL_CreateWindow("Voxel Renderer", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, WINDOW_WIDTH, WINDOW_HEIGHT, SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN| SDL_WINDOW_RESIZABLE);
-    glContext = SDL_GL_CreateContext(window);
-
-    GLenum glewError = glewInit();
-
-    if(glewError != GLEW_OK){
-        printf("Error initializing GLEW! %s", glewGetErrorString(glewError));
-    }
-
-    SDL_Event event;
-
-    bool quit = false;
-
-    // Depth testing and face culling
-    glEnable(GL_DEPTH_TEST);
-    glDepthFunc(GL_LESS);
-
-    glEnable(GL_CULL_FACE);
-    glCullFace(GL_BACK);
-
-    // Shader programs
-
-   float cubeVertices[] = {
-    // Front
-    -0.5f, -0.5f,  0.5f,
-     0.5f, -0.5f,  0.5f,
-     0.5f,  0.5f,  0.5f,
-    -0.5f,  0.5f,  0.5f,
-
-    // Back
-    -0.5f, -0.5f, -0.5f,
-    -0.5f,  0.5f, -0.5f,
-     0.5f,  0.5f, -0.5f,
-     0.5f, -0.5f, -0.5f,
-
-    // Left
-    -0.5f, -0.5f,  0.5f,
-    -0.5f,  0.5f,  0.5f,
-    -0.5f,  0.5f, -0.5f,
-    -0.5f, -0.5f, -0.5f,
-
-    // Right
-     0.5f, -0.5f, -0.5f,
-     0.5f,  0.5f, -0.5f,
-     0.5f,  0.5f,  0.5f,
-     0.5f, -0.5f,  0.5f,
-
-    // Top
-    -0.5f,  0.5f,  0.5f,
-     0.5f,  0.5f,  0.5f,
-     0.5f,  0.5f, -0.5f,
-    -0.5f,  0.5f, -0.5f,
-
-    // Bottom
-    -0.5f, -0.5f,  0.5f,
-    -0.5f, -0.5f, -0.5f,
-     0.5f, -0.5f, -0.5f,
-     0.5f, -0.5f,  0.5f
+GLfloat cubeVertices[] = {
+    // Front face
+    -1.0f, -1.0f,  1.0f,
+     1.0f, -1.0f,  1.0f,
+     1.0f,  1.0f,  1.0f,
+    -1.0f,  1.0f,  1.0f,
+    // Back face
+    -1.0f, -1.0f, -1.0f,
+     1.0f, -1.0f, -1.0f,
+     1.0f,  1.0f, -1.0f,
+    -1.0f,  1.0f, -1.0f,
+    // Right face
+     1.0f, -1.0f, -1.0f,
+     1.0f, -1.0f,  1.0f,
+     1.0f,  1.0f,  1.0f,
+     1.0f,  1.0f, -1.0f,
+    // Left face
+    -1.0f, -1.0f, -1.0f,
+    -1.0f, -1.0f,  1.0f,
+    -1.0f,  1.0f,  1.0f,
+    -1.0f,  1.0f, -1.0f,
+    // Bottom face
+    -1.0f, -1.0f, -1.0f,
+     1.0f, -1.0f, -1.0f,
+     1.0f, -1.0f,  1.0f,
+    -1.0f, -1.0f,  1.0f,
+    // Top face
+    -1.0f,  1.0f, -1.0f,
+     1.0f,  1.0f, -1.0f,
+     1.0f,  1.0f,  1.0f,
+    -1.0f,  1.0f,  1.0f,
+};
+GLuint cubeIndicies[] = {
+    0, 1, 2, 2, 3, 0, // Front face
+    4, 5, 6, 6, 7, 4, // Back face
+    8, 9, 10, 10, 11, 8, // Right face
+    12, 13, 14, 14, 15, 12, // Left face
+    16, 17, 18, 18, 19, 16, // Bottom face
+    20, 21, 22, 22, 23, 20, // Top face
 };
 
+ int main(int argc, char* argv[]){
+    // Initialize SDL
+    SDL_Window* window;
+    SDL_GLContext glContext;
 
-    GLuint cubeVBO;
-    glGenBuffers(1, &cubeVBO);
-    glBindBuffer(GL_ARRAY_BUFFER, cubeVBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(cubeVertices), cubeVertices, GL_STATIC_DRAW);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
+    if (SDL_Init(SDL_INIT_VIDEO) < 0) {
+        printf("Failed to initialize SDL: %s\n", SDL_GetError());
+        return 1;
+    }
 
-    char* vertexShaderFile = loadShader("./shaders/vertexShader.glsl");
-    char* fragmentShaderFile = loadShader("./shaders/fragmentShader.glsl");
+    // Create window
+    window = SDL_CreateWindow("Voxel Engine", SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, WINDOW_WIDTH, WINDOW_HEIGHT, SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN);
 
+    if (window == NULL) {
+        printf("Failed to create window: %s\n", SDL_GetError());
+        return 1;
+    }
+
+    // Create OpenGL context
+    glContext = SDL_GL_CreateContext(window);
+
+    if (glContext == NULL) {
+        printf("Failed to create OpenGL context: %s\n", SDL_GetError());
+        return 1;
+    }
+
+    // Initialize GLEW
+    glewExperimental = GL_TRUE;
+    GLenum glewError = glewInit();
+
+    if (glewError != GLEW_OK) {
+        printf("Failed to initialize GLEW: %s\n", glewGetErrorString(glewError));
+        return 1;
+    }
+
+    // Initialize OpenGL
+
+    // Enable depth testing
+
+    // SDL event
+    SDL_Event event;
+
+    // Shaders
+
+    // Vertex shader
     GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
-    glShaderSource(vertexShader, 1, &vertexShaderFile, NULL);
+    char* vertexShaderSource = loadShader("./shaders/vertexShader.glsl");
+    glShaderSource(vertexShader, 1, (const GLchar**)&vertexShaderSource, NULL);
     glCompileShader(vertexShader);
+    free(vertexShaderSource);
 
+    // Fragment shader
     GLuint fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
-    glShaderSource(fragmentShader, 1, &fragmentShaderFile, NULL);
+    char* fragmentShaderSource = loadShader("./shaders/fragmentShader.glsl");
+    glShaderSource(fragmentShader, 1, (const GLchar**)&fragmentShaderSource, NULL);
     glCompileShader(fragmentShader);
+    free(fragmentShaderSource);
 
+    // Shader program
     GLuint shaderProgram = glCreateProgram();
     glAttachShader(shaderProgram, vertexShader);
     glAttachShader(shaderProgram, fragmentShader);
     glLinkProgram(shaderProgram);
-    glUseProgram(shaderProgram);
 
-    GLint viewMatrixPos = glGetUniformLocation(shaderProgram, "viewMatrix");
-    GLint projectionMatrixPos = glGetUniformLocation(shaderProgram, "projectionMatrix");
-    GLint modelMatrixPos = glGetUniformLocation(shaderProgram, "modelMatrix");
+    GLuint VBO, IBO;
+    glGenBuffers(1, &VBO);
+    glGenBuffers(1, &IBO);
+
+    glBindBuffer(GL_ARRAY_BUFFER, VBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(cubeVertices), cubeVertices, GL_STATIC_DRAW);
+
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IBO);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(cubeIndicies), cubeIndicies, GL_STATIC_DRAW);
+
+    GLint mvpLocation = glGetAttribLocation(shaderProgram, "uModelViewProjectionMatrix");
+
+    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+
+    glEnable(GL_DEPTH_TEST);
+    glDepthFunc(GL_LESS);
+
+    // Enable backface culling
+    glEnable(GL_CULL_FACE);
+    glCullFace(GL_BACK);
 
     // Camera
-    glm::vec3 position = glm::vec3(0.0f, 0.0f, 3.0f);
-    glm::vec3 target = glm::vec3(0.0f);
+
+    glm::vec3 position = glm::vec3(0.0f, 0.0f, 5.0f);
+    glm::vec3 target = glm::vec3(0.0f, 0.0f, 0.0f);
     glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f);
 
-    // Voxel file loading
-    voxFile debugVoxelFile = openVoxFile("./voxelFiles/debugFile.vv");
-    Voxel* debugVoxels = makeVoxels(debugVoxelFile);
+    // Main loop
+    bool quit = false;
 
     while(!quit){
-        while(SDL_PollEvent(&event)){
-            switch (event.type){
+        // Handle Events
+        while(SDL_PollEvent(&event) != 0){
+            switch (event.type) {
                 case SDL_QUIT:
                     quit = true;
                     break;
             }
         }
 
-
-        glm::mat4 modelMatrix = getViewMatrix(position, target, up);
-        glm::mat4 projectionMatrix = getProjectionMatrix(WINDOW_WIDTH, WINDOW_HEIGHT);
-        glm::mat4 viewPortMatrix = getViewPortMatrix(WINDOW_WIDTH, WINDOW_HEIGHT, position, target, up);
-
-        glUniformMatrix4fv(modelMatrixPos, 1, GL_FALSE, &modelMatrix[0][0]);
-        glUniformMatrix4fv(projectionMatrixPos, 1, GL_FALSE, &projectionMatrix[0][0]);
-        glUniformMatrix4fv(viewMatrixPos, 1, GL_FALSE, &viewPortMatrix[0][0]);
-
+        // Clear screen
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        glUseProgram(shaderProgram);
+        // Update camera
+        glm::mat4 mvpMatrix = getViewPortMatrix((float)WINDOW_WIDTH, (float)WINDOW_HEIGHT, position, target, up);
 
-        renderVoxels(debugVoxels, debugVoxelFile, shaderProgram, cubeVBO);
-
+        // Set MVP matrix
         glUseProgram(shaderProgram);
+        glUniformMatrix4fv(mvpLocation, 1, GL_FALSE, glm::value_ptr(mvpMatrix));
+
+        // Draw cube
+        glBindBuffer(GL_ARRAY_BUFFER, VBO);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
+        glEnableVertexAttribArray(0);
+
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IBO);
+        glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_INT, 0);
+
+        glDisableVertexAttribArray(0);
+
+        // Update screen
 
         SDL_GL_SwapWindow(window);
 
