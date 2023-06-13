@@ -5,6 +5,6 @@
 
 # Builds
 build/
-
-
+*/*.o
+main
 

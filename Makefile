@@ -1,31 +1,20 @@
-CXX = g++
-CFLAGS = -Wall -Wextra -std=c17 `pkg-config --cflags sdl2 SDL2_ttf glew` -I./include
-CPPFLAGS = -Wall -Wextra -std=c++17 `pkg-config --cflags sdl2 SDL2_ttf glew glm`
-LIBS = `pkg-config --libs sdl2 SDL2_ttf glew` -framework OpenGL
 
-CSOURCES = ./src/main.c ./src/voxelRenderer.c
-CPPSOURCES = ./src/Camera.cpp
+CC = gcc
+CFLAGS = -Wall -Wextra -std=c17 `pkg-config --cflags sdl2 glew cglm` 
+LIBS = `pkg-config --libs sdl2 glew cglm` -framework OpenGL -v
 
-VOXFILE = debugFile.vv
-SHADERS = ./src/shaders/vertexShader.glsl ./src/shaders/fragmentShader.glsl
+SRC = $(wildcard src/*.c)
+OBJ = $(SRC:.c=.o)
+EXEC = main
 
-.PHONY: all build clean
+all: $(EXEC)
 
-all: build
+$(EXEC): $(OBJ)
+	$(CC) -o $@ $^ $(LIBS)
 
-build:
-	mkdir -p build
-	$(CXX) $(CSOURCES) $(CPPSOURCES) -o build/main $(CFLAGS) $(CPPFLAGS) $(LIBS)
-	
-	mkdir -p build/voxelFiles
-	mkdir -p build/shaders
-	
-	cp -p $(VOXFILE) build/voxelFiles/
-	cp -p $(SHADERS) build/shaders/
+%.o: %.c
+	$(CC) -o $@ -c $< $(CFLAGS)
 
-
-
-	
 clean:
-	rm -rf build/
+	rm -rf $(OBJ) $(EXEC)
 
