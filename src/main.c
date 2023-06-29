@@ -8,6 +8,47 @@
 #define false 0
 #define true 1
 
+
+void getNewFront(float x, float y, bool lockCamera, vec3 result){
+
+    float lastX = 0.0f;
+    float lastY = 0.0f;
+
+    if(!lockCamera){
+        lastX = x;
+        lastY = y;
+    }
+
+    float xOffset = x - lastX;
+    float yOffset = lastY - y;
+
+    lastX = x;
+    lastY = y;
+
+
+    float sensitivity = 0.1f;
+    xOffset *= sensitivity;
+    yOffset *= sensitivity;
+
+    float yaw;
+    float pitch;
+
+    yaw += xOffset;
+    pitch += yOffset;
+
+    if(pitch > 89.0f){
+        pitch = 89.0f;
+    }
+
+    if(pitch < -89.0f){
+        pitch = -89.0f;
+    }
+
+    result[0] = cos(glm_rad(yaw)) * cos(glm_rad(pitch));
+    result[1] = sin(glm_rad(pitch));
+    result[2] = sin(glm_rad(yaw)) * cos(glm_rad(pitch));
+}
+
 int main(int argc, char* argv[]){
     SDL_Window* window;
     SDL_GLContext context;
@@ -160,9 +201,17 @@ int main(int argc, char* argv[]){
     vec3 cameraTarget = {0.0f, 0.0f, 0.0f};
     vec3 cameraFront = {0.0f, 0.0f, -1.0f};
 
+    vec3 relCameraFront;
+    vec3 relCameraPos;
+
+    float cameraSpeed = 0.05f;
+
+    float relX, relY;
+    float mouseX, mouseY;
+    float accumX, accumY = 0.0f;
 
     while(!quit){
-
+        getNewFront(accumX, accumY, false, cameraFront);
         vec3 cameraDirection;
 
         glm_vec3_sub(cameraTarget, cameraPos, cameraDirection);
@@ -181,51 +230,67 @@ int main(int argc, char* argv[]){
         vec3 cameraFrontPlusPos;
         glm_vec3_add(cameraFront, cameraPos, cameraFrontPlusPos);
 
-        float cameraSpeed = 0.05f;
-
         while (SDL_PollEvent(&e)) {
-            if (e.type == SDL_QUIT) {
-                quit = true;
-            }
-            else if (e.type == SDL_KEYDOWN) {
-                switch (e.key.keysym.sym) {
-                    case SDLK_w:
-                        {
-                            vec3 scaledFront;
-                            glm_vec3_scale(cameraFront, cameraSpeed, scaledFront);
-                            glm_vec3_add(cameraPos, scaledFront, cameraPos);
-                        }
-                        break;
-                    case SDLK_s:
-                        {
-                            vec3 scaledFront;
-                            glm_vec3_scale(cameraFront, cameraSpeed, scaledFront);
-                            glm_vec3_sub(cameraPos, scaledFront, cameraPos);
-                        }
-                        break;
-                    case SDLK_a:
-                        {
-                            vec3 right;
-                            glm_vec3_cross(cameraFront, cameraUp, right);
-                            glm_normalize(right);
-                            glm_vec3_scale(right, cameraSpeed, right);
-                            glm_vec3_sub(cameraPos, right, cameraPos);
-                        }
-                        break;
-                    case SDLK_d:
-                        {
-                            vec3 right;
-                            glm_vec3_cross(cameraFront, cameraUp, right);
-                            glm_normalize(right);
-                            glm_vec3_scale(right, cameraSpeed, right);
-                            glm_vec3_add(cameraPos, right, cameraPos);
-                        }
-                        break;
-                }
+            switch (e.type){
+                case SDL_QUIT:
+                    quit = true;
+                    break;
+
+                case SDL_KEYDOWN:
+                    switch (e.key.keysym.sym){
+                        case SDLK_w:
+                            printf("W\n");// Removal of this printf causes the build to fail idk why.
+                            vec3 scaledFrontW;
+                            glm_vec3_scale(cameraPos, cameraSpeed, scaledFrontW);
+                            glm_vec3_sub(relCameraPos, scaledFrontW, relCameraPos);
+                            break;
+
+                        case SDLK_s:
+                            printf("S\n");// Removal of this printf causes the build to fail idk why.
+                            vec3 scaledFrontS;
+                            glm_vec3_scale(cameraPos, cameraSpeed, scaledFrontS);
+                            glm_vec3_add(relCameraPos, scaledFrontS, relCameraPos);
+                            break;
+                        case SDLK_a:
+                            printf("A\n");// Removal of this printf causes the build to fail idk why.
+                            vec3 rightA;
+                            glm_vec3_cross(cameraFront, cameraUp, rightA);
+                            glm_vec3_normalize(rightA);
+                            glm_vec3_scale(rightA, cameraSpeed, rightA);
+                            glm_vec3_sub(relCameraPos, rightA, relCameraPos);
+                            break;
+                        case SDLK_d:
+                            printf("D\n");// Removal of this printf causes the build to fail idk why.
+                            vec3 rightD;
+                            glm_vec3_cross(cameraFront, cameraUp, rightD);
+                            glm_vec3_normalize(rightD);
+                            glm_vec3_scale(rightD, cameraSpeed, rightD);
+                            glm_vec3_add(relCameraPos, rightD, relCameraPos);
+                            break;
+
+                    }
+
+                    break;
+
+                case SDL_MOUSEMOTION:
+                    relX = e.motion.xrel;
+                    relY = e.motion.yrel;
+
+                    accumX += relX;
+                    accumY += relY;
+
+                    SDL_GetMouseState(&mouseX, &mouseY);
+
+                    float newMouseX = mouseX + relX;
+                    float newMouseY = mouseY + relY;
+
+                    //TODO: use the newMouseX and newMouseY to snap cursor to window;
+                    break;
             }
         }
 
-
+        glm_vec3_add(cameraPos, relCameraPos, cameraPos);
+        glm_vec3_zero(relCameraPos);
 
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -242,7 +307,6 @@ int main(int argc, char* argv[]){
         float far = 100.0f;
 
         glm_mat4_identity(model);
-        glm_rotate(model, glm_rad(angle), axis);
 
         glm_mat4_identity(view);
         glm_lookat(cameraPos, cameraFrontPlusPos, cameraUp, view);
